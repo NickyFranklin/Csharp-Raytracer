@@ -16,3 +16,8 @@ public class Pixel {
     }
 }
 
+public class vec3 {
+    public double[] e = new double[3];
+    
+
+}
