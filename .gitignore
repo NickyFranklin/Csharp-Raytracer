@@ -1,0 +1,10 @@
+
+*.ppm
+*.json
+Raytracer/bin/Debug/net8.0/Raytracer
+*.dll
+*.pdb
+/Raytracer/obj/Debug
+*.cache
+*.props
+*.targets
