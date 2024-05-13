@@ -1,4 +1,5 @@
 ﻿using System;
+using SDL2;
 class Program
 {
     static void Main(string[] args)
@@ -26,7 +27,11 @@ class Program
         //Write Pixel Data loop
         for(int i = 0; i < height; i++) {
             for(int j = 0; j < width; j++) {
-                pixelArr[j+(i*width)] = new Pixel(120, 120, 120);
+                double tempRed = ((double) j) / (width-1);
+                double tempGreen = ((double) i) / (height - 1);
+                double tempBlue = 0;
+                pixelArr[j+(i*width)] = 
+                    new Pixel((int) (tempRed * 255.999), (int) (tempGreen * 255.999), (int) (tempBlue * 255.999));
             }
         }
 
