@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Microsoft.VisualBasic;
 using SDL2;
 class Program
@@ -12,7 +13,8 @@ class Program
         }
 
         // Create a new window given a title, size, and passes it a flag indicating it should be shown.
-        var window = SDL.SDL_CreateWindow("Image", SDL.SDL_WINDOWPOS_UNDEFINED, SDL.SDL_WINDOWPOS_UNDEFINED, 1024, 1024, SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN);
+        var window = SDL.SDL_CreateWindow("Image", SDL.SDL_WINDOWPOS_UNDEFINED, SDL.SDL_WINDOWPOS_UNDEFINED, 
+        int.Parse(args[0]), int.Parse(args[1]), SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN);
 
         if (window == IntPtr.Zero)
         {
@@ -71,6 +73,7 @@ class Program
             }
         }
 
+        /*
         //Write to file loops
         for(int i = 0; i < height; i++) {
             for(int j = 0; j < width; j++) {
@@ -85,7 +88,8 @@ class Program
                 }
             }
         }
-
+        */
+        WriteToFile(height, width, pixelArr);
 
         //SDL stuff
         var running = true;
@@ -93,47 +97,68 @@ class Program
         // Main loop for the program
         while (running)
         {
-            // Check to see if there are any events and continue to do so until the queue is empty.
-            while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
-            {
-                switch (e.type)
-                {
-                    case SDL.SDL_EventType.SDL_QUIT:
-                        running = false;
+            for(int i = 0; i < height; i++) {
+            
+                for(int j = 0; j < width; j++) {
+                    while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
+                    {
+                        switch (e.type)
+                        {
+                            case SDL.SDL_EventType.SDL_QUIT:
+                                running = false;
+                                break;
+                        }
+                    }
+
+                    if(running == false) { 
                         break;
+                    }
+                    Render(renderer, width, height, pixelArr[j + (i * width)], j, i);
+                }
+                if (running == false)
+                {
+                    break;
                 }
             }
-
-            // Sets the color that the screen will be cleared with.
-            if (SDL.SDL_SetRenderDrawColor(renderer, 135, 206, 235, 255) < 0)
-            {
-                Console.WriteLine($"There was an issue with setting the render draw color. {SDL.SDL_GetError()}");
-            }
-
-            // Clears the current render surface.
-            if (SDL.SDL_RenderClear(renderer) < 0)
-            {
-                Console.WriteLine($"There was an issue with clearing the render surface. {SDL.SDL_GetError()}");
-            }
-
-            // Switches out the currently presented render surface with the one we just did work on.
             SDL.SDL_RenderPresent(renderer);
         }
 
         // Clean up the resources that were created.
+        CleanUp(renderer, window);
+
+
+    }
+
+    static void Render(nint renderer, int width, int height, Pixel pixel, int x, int y) {
+        SDL.SDL_SetRenderDrawColor(renderer, (byte) pixel.r, (byte) pixel.g, (byte) pixel.b, 255);
+        SDL.SDL_RenderDrawPoint(renderer, x, y);
+        //SDL.SDL_RenderPresent(renderer);
+    }
+
+    static void CleanUp(nint renderer, nint window) {
         SDL.SDL_DestroyRenderer(renderer);
         SDL.SDL_DestroyWindow(window);
         SDL.SDL_Quit();
-
     }
 
-    void Render(nint renderer, int width, int height, Pixel pixel, int x, int y) {
-        SDL.SDL_SetRenderDrawColor(renderer, (byte) pixel.r, (byte) pixel.g, (byte) pixel.b, 255);
-        SDL.SDL_RenderClear(renderer);
-        SDL.SDL_RenderPresent(renderer);
-        SDL.SDL_RenderDrawPoint(renderer, x, y);
+    static void WriteToFile(int height, int width, Pixel[] pixelArr) {
+        for (int i = 0; i < height; i++)
+        {
+            for (int j = 0; j < width; j++)
+            {
+                if (j != (width - 1))
+                {
+                    File.AppendAllText("Pic.ppm",
+                    $"{pixelArr[j + (i * width)].r} {pixelArr[j + (i * width)].g} {pixelArr[j + (i * width)].b} ");
+                }
+
+                else
+                {
+                    File.AppendAllText("Pic.ppm",
+                    $"{pixelArr[j + (i * width)].r} {pixelArr[j + (i * width)].g} {pixelArr[j + (i * width)].b}\n");
+                }
+            }
+        }
+
     }
-
-    
-
 } 
