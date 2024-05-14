@@ -6,6 +6,18 @@ class Program
 {
     static void Main(string[] args)
     {
+        //set initial values for image width and height if none provided
+        int width = 512;
+        int height = 512;
+
+        //If values are provided, set the values
+        if (args.Length == 2) {
+            width = int.Parse(args[0]);
+            height = int.Parse(args[1]);
+        }
+
+
+
         // Initilizes SDL.
         if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
         {
@@ -14,7 +26,7 @@ class Program
 
         // Create a new window given a title, size, and passes it a flag indicating it should be shown.
         var window = SDL.SDL_CreateWindow("Image", SDL.SDL_WINDOWPOS_UNDEFINED, SDL.SDL_WINDOWPOS_UNDEFINED, 
-        int.Parse(args[0]), int.Parse(args[1]), SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN);
+        width, height, SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN);
 
         if (window == IntPtr.Zero)
         {
@@ -39,24 +51,9 @@ class Program
         }
 
 
-        //set initial values for image width and height if none provided
-        int width = 512;
-        int height = 512;
 
-        //If values are provided, set the values
-        if (args.Length == 2) {
-            width = int.Parse(args[0]);
-            height = int.Parse(args[1]);
-        }
 
-        //verify values set
-        Console.WriteLine( width + " " + height);
-
-        //create file with a name
-        File.WriteAllText("Pic.ppm", "P3\n");
-        File.AppendAllText("Pic.ppm", $"{width} {height}\n");
-        File.AppendAllText("Pic.ppm", "255\n");
-
+        //Create New array with the number of pixels needed
         Pixel[] pixelArr = new Pixel[width * height];
 
 
@@ -73,24 +70,6 @@ class Program
             }
         }
 
-        /*
-        //Write to file loops
-        for(int i = 0; i < height; i++) {
-            for(int j = 0; j < width; j++) {
-                if(j != (width - 1)) {
-                    File.AppendAllText("Pic.ppm", 
-                    $"{pixelArr[j+(i*width)].r} {pixelArr[j+(i*width)].g} {pixelArr[j+(i*width)].b} ");
-                }
-
-                else {
-                    File.AppendAllText("Pic.ppm", 
-                    $"{pixelArr[j+(i*width)].r} {pixelArr[j+(i*width)].g} {pixelArr[j+(i*width)].b}\n");
-                }
-            }
-        }
-        */
-        WriteToFile(height, width, pixelArr);
-
         //SDL stuff
         var running = true;
 
@@ -98,7 +77,7 @@ class Program
         while (running)
         {
             for(int i = 0; i < height; i++) {
-            
+                //Console.WriteLine($"{i+1} / {height} lines");
                 for(int j = 0; j < width; j++) {
                     while (SDL.SDL_PollEvent(out SDL.SDL_Event e) == 1)
                     {
@@ -125,8 +104,6 @@ class Program
 
         // Clean up the resources that were created.
         CleanUp(renderer, window);
-
-
     }
 
     static void Render(nint renderer, int width, int height, Pixel pixel, int x, int y) {
@@ -142,6 +119,10 @@ class Program
     }
 
     static void WriteToFile(int height, int width, Pixel[] pixelArr) {
+        File.WriteAllText("Pic.ppm", "P3\n");
+        File.AppendAllText("Pic.ppm", $"{width} {height}\n");
+        File.AppendAllText("Pic.ppm", "255\n");
+        
         for (int i = 0; i < height; i++)
         {
             for (int j = 0; j < width; j++)
@@ -161,4 +142,5 @@ class Program
         }
 
     }
+
 } 
