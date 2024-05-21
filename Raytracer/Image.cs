@@ -2,6 +2,37 @@ using System;
 using System.Runtime.InteropServices;
 
 //The ray class is able to have a direction and an origin for lighting purposes
+public abstract class Shape {
+    public abstract Pixel Color();
+    public abstract bool RayHit(Ray ray);
+}
+
+public class Sphere : Shape {
+    public vec4 center;
+    public double radius;
+    public Pixel color;
+
+    public Sphere(vec4 center, double radius, Pixel color) {
+        this.center = center;
+        this.radius = radius;
+        this.color = color;
+    }
+
+    public override bool RayHit(Ray ray) {
+        //Quadractice formula
+        vec4 centerMinusOrigin = vec4.Sub3(center, ray.Origin());
+        double a = vec4.Dot3(ray.Direction(), ray.Direction());
+        double b = -2.0 * vec4.Dot3(ray.Direction(), centerMinusOrigin);
+        double c = vec4.Dot3(centerMinusOrigin, centerMinusOrigin) - radius * radius;
+        double discriminant = b*b - 4*a*c;
+        return discriminant >= 0;
+    }
+
+    public override Pixel Color() {
+        return color;
+    }
+}
+
 public class Ray {
     public vec4 origin = new();
     public vec4 dir = new();

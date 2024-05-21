@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Runtime.CompilerServices;
 using Microsoft.VisualBasic;
 using SDL2;
@@ -52,16 +53,22 @@ class Program
         }
 
 
-
-
         //Create New array with the number of pixels needed
         Pixel[] pixelArr = new Pixel[width * height];
+        var shapes = new ArrayList();
+
+        Sphere sphere1 = new(new vec4(0, 0, -1, 0), 0.5, new Pixel(255, 0, 0));
+        Sphere sphere2 = new(new vec4(1, 0, -2, 0), 0.5, new Pixel(0, 255, 0));
+        Sphere sphere3 = new(new vec4(-1, 0, -2, 0), 0.5, new Pixel(0, 0, 255));
+        shapes.Add(sphere1);
+        shapes.Add(sphere2);
+        shapes.Add(sphere3);
 
         //Camera Code
         double focalLength = 1.0;
         double viewportHeight = 2.0;
         double viewportWidth = viewportHeight * (double) ((double) width/ (double) height);
-        vec4 center = new(0, 0, 0, 0);
+        vec4 cameraCenter = new(0, 0, 0, 0);
 
         //vectors across horizontal and down vertical
         vec4 viewportU = new(viewportWidth, 0, 0, 0);
@@ -71,18 +78,9 @@ class Program
         vec4 pixelDeltaU = vec4.Div3(viewportU, (double) width);
         vec4 pixelDeltaV = vec4.Div3(viewportV, (double) height);
 
-        //Location og upper left pixel
-        vec4 viewport_upper_left = 
-            vec4.Sub3(
-                vec4.Sub3(
-                    vec4.Sub3(center, new vec4(0, 0, focalLength, 0))
-                    , vec4.Div3(viewportU, 2))
-                    , vec4.Div3(viewportV, 2));
-        
-        vec4 pixel00_loc = vec4.Add3(viewport_upper_left,
-            vec4.Mul3(
-                vec4.Add3(pixelDeltaU, pixelDeltaV), 0.5
-            ));
+        //Location of upper left pixel
+        vec4 viewport_upper_left = vec4.Sub3( vec4.Sub3( vec4.Sub3(cameraCenter, new vec4(0, 0, focalLength, 0)), vec4.Div3(viewportU, 2)), vec4.Div3(viewportV, 2));
+        vec4 pixel00_loc = vec4.Add3(viewport_upper_left, vec4.Mul3(vec4.Add3(pixelDeltaU, pixelDeltaV), 0.5));
 
         //Render
         //Write Pixel Data loop
@@ -90,12 +88,13 @@ class Program
         for(int i = 0; i < height; i++) {
             Console.WriteLine($"{i+1} / {height} lines");
             for(int j = 0; j < width; j++) {
-                vec4 pixel_center = vec4.Add3(
-                    vec4.Add3(pixel00_loc, vec4.Mul3( pixelDeltaU, (double) j))
-                    , vec4.Mul3(pixelDeltaV, (double) i));
-                vec4 ray_direction = vec4.Sub3(pixel_center, center);
-                Ray ray = new(center, ray_direction);
-                pixelArr[j+(i*width)] = ray_color(ray);
+                vec4 pixel_center = vec4.Add3(vec4.Add3(pixel00_loc, vec4.Mul3( pixelDeltaU, (double) j)), vec4.Mul3(pixelDeltaV, (double) i));
+                
+                vec4 ray_direction = vec4.Sub3(pixel_center, cameraCenter);
+                
+                Ray ray = new(cameraCenter, ray_direction);
+                
+                pixelArr[j+(i*width)] = ray_color(ray, shapes);
             }
         }
 
@@ -137,7 +136,13 @@ class Program
         CleanUp(renderer, window);
     }
 
-    static Pixel ray_color(Ray ray) {
+    static Pixel ray_color(Ray ray, ArrayList shapes) {
+        foreach(Shape item in shapes) {
+            if(item.RayHit(ray)) {
+                return item.Color();
+            }
+        }
+
         vec4 unit_direction = vec4.Unit3(ray.Direction());
         double a = 0.5 * (unit_direction.e[1] + 1.0);
         return new Pixel((int) ((((1.0 - a) * 1.0) + (a * 0.5)) * 255.999), 
