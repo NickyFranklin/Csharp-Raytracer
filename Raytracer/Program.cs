@@ -95,11 +95,11 @@ class Program
                     , vec4.Mul3(pixelDeltaV, (double) i));
                 vec4 ray_direction = vec4.Sub3(pixel_center, center);
                 Ray ray = new(center, ray_direction);
-                pixelArr[j+(i*width)] = Program.ray_color(ray);
+                pixelArr[j+(i*width)] = ray_color(ray);
             }
         }
 
-        WriteToFile(height, width, pixelArr);
+        //WriteToFile(height, width, pixelArr);
 
         //SDL stuff
         var running = true;
