@@ -18,6 +18,13 @@ public class Ray {
         return vec4.Add3(origin, vec4.Mul3(dir, t));
     }
 
+    public vec4 Direction() {
+        return dir;
+    }
+
+    public vec4 Origin() {
+        return origin;
+    }
 }
 
 //Pixel class represents the color of a pixel on a screen
@@ -130,6 +137,7 @@ public class vec4 {
 
 
     //Division Functions
+    
     public static vec4 Div3(vec4 e1, vec4 e2) {
         return new vec4(e1.e[0] / e2.e[0], e1.e[1] / e2.e[1], e1.e[2] / e2.e[2], 0);
     }

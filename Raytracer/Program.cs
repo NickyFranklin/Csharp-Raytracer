@@ -16,7 +16,8 @@ class Program
             height = int.Parse(args[1]);
         }
 
-
+        double aspectRatio = 16.0/9.0;
+        height = (int) (width / aspectRatio);
 
         // Initilizes SDL.
         if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
@@ -56,19 +57,49 @@ class Program
         //Create New array with the number of pixels needed
         Pixel[] pixelArr = new Pixel[width * height];
 
+        //Camera Code
+        double focalLength = 1.0;
+        double viewportHeight = 2.0;
+        double viewportWidth = viewportHeight * (double) ((double) width/ (double) height);
+        vec4 center = new(0, 0, 0, 0);
 
+        //vectors across horizontal and down vertical
+        vec4 viewportU = new(viewportWidth, 0, 0, 0);
+        vec4 viewportV = new(0, -viewportHeight, 0 , 0);
+
+        //vectors from pixel to pixel
+        vec4 pixelDeltaU = vec4.Div3(viewportU, (double) width);
+        vec4 pixelDeltaV = vec4.Div3(viewportV, (double) height);
+
+        //Location og upper left pixel
+        vec4 viewport_upper_left = 
+            vec4.Sub3(
+                vec4.Sub3(
+                    vec4.Sub3(center, new vec4(0, 0, focalLength, 0))
+                    , vec4.Div3(viewportU, 2))
+                    , vec4.Div3(viewportV, 2));
+        
+        vec4 pixel00_loc = vec4.Add3(viewport_upper_left,
+            vec4.Mul3(
+                vec4.Add3(pixelDeltaU, pixelDeltaV), 0.5
+            ));
+
+        //Render
         //Write Pixel Data loop
         Console.WriteLine("Beginning Raytracing");
         for(int i = 0; i < height; i++) {
             Console.WriteLine($"{i+1} / {height} lines");
             for(int j = 0; j < width; j++) {
-                double tempRed = ((double) j) / (width-1);
-                double tempGreen = ((double) i) / (height - 1);
-                double tempBlue = 0;
-                pixelArr[j+(i*width)] = 
-                    new Pixel((int) (tempRed * 255.999), (int) (tempGreen * 255.999), (int) (tempBlue * 255.999));
+                vec4 pixel_center = vec4.Add3(
+                    vec4.Add3(pixel00_loc, vec4.Mul3( pixelDeltaU, (double) j))
+                    , vec4.Mul3(pixelDeltaV, (double) i));
+                vec4 ray_direction = vec4.Sub3(pixel_center, center);
+                Ray ray = new(center, ray_direction);
+                pixelArr[j+(i*width)] = Program.ray_color(ray);
             }
         }
+
+        WriteToFile(height, width, pixelArr);
 
         //SDL stuff
         var running = true;
@@ -104,6 +135,14 @@ class Program
 
         // Clean up the resources that were created.
         CleanUp(renderer, window);
+    }
+
+    static Pixel ray_color(Ray ray) {
+        vec4 unit_direction = vec4.Unit3(ray.Direction());
+        double a = 0.5 * (unit_direction.e[1] + 1.0);
+        return new Pixel((int) ((((1.0 - a) * 1.0) + (a * 0.5)) * 255.999), 
+                         (int) ((((1.0 - a) * 1.0) + (a * 0.7)) * 255.999),
+                         (int) ((((1.0 - a) * 1.0) + (a * 1.0)) * 255.999));
     }
 
     static void Render(nint renderer, int width, int height, Pixel pixel, int x, int y) {
