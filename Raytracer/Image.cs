@@ -2,9 +2,27 @@ using System;
 using System.Runtime.InteropServices;
 
 //The ray class is able to have a direction and an origin for lighting purposes
+
+//May want to rename to hittable at some point
 public abstract class Shape {
     public abstract Pixel Color();
-    public abstract bool RayHit(Ray ray);
+    public abstract bool RayHit(Ray ray, double tmin, double tmax, hitRecord record);
+}
+
+public class hitRecord {
+    public vec4 p;
+    public vec4 normal;
+    public double t;
+    public bool frontFace;
+    public Pixel color;
+
+    public void SetFaceNormal(Ray ray, vec4 outwardNormal) {
+        //sets normal for the record
+        //outwardNormal is assumed to be unit length
+
+        frontFace = vec4.Dot3(ray.Direction(), outwardNormal) < 0;
+        normal = frontFace ? outwardNormal : vec4.Mul3(outwardNormal, -1);
+    }
 }
 
 public class Sphere : Shape {
@@ -18,14 +36,36 @@ public class Sphere : Shape {
         this.color = color;
     }
 
-    public override bool RayHit(Ray ray) {
+    public override bool RayHit(Ray ray, double tmin, double tmax, hitRecord record) {
         //Quadractice formula
         vec4 centerMinusOrigin = vec4.Sub3(center, ray.Origin());
         double a = vec4.Dot3(ray.Direction(), ray.Direction());
-        double b = -2.0 * vec4.Dot3(ray.Direction(), centerMinusOrigin);
+        double h = vec4.Dot3(ray.Direction(), centerMinusOrigin);
         double c = vec4.Dot3(centerMinusOrigin, centerMinusOrigin) - radius * radius;
-        double discriminant = b*b - 4*a*c;
-        return discriminant >= 0;
+        double discriminant = h*h - a*c;
+
+        if(discriminant < 0) {
+            return false;
+        }
+
+        double sqrtDiscriminant = Math.Sqrt(discriminant);
+
+        //find nearest root in range
+        double root = (h - sqrtDiscriminant) / a;
+        if(root <= tmin || tmax <= root) {
+            return false;
+        }
+
+        //If this is the closest object, set the record straight
+        if(root < record.t) {
+            record.t = root;
+            record.p = ray.Pos(record.t);
+            vec4 outwardNormal = vec4.Div3(vec4.Sub3(record.p, center), radius);
+            record.SetFaceNormal(ray, outwardNormal);
+            record.color = this.color;
+        }
+        return true;
+
     }
 
     public override Pixel Color() {

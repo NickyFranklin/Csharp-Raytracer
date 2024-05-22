@@ -55,14 +55,15 @@ class Program
 
         //Create New array with the number of pixels needed
         Pixel[] pixelArr = new Pixel[width * height];
+        
         var shapes = new ArrayList();
-
-        Sphere sphere1 = new(new vec4(0, 0, -1, 0), 0.5, new Pixel(255, 0, 0));
-        Sphere sphere2 = new(new vec4(1, 0, -2, 0), 0.5, new Pixel(0, 255, 0));
-        Sphere sphere3 = new(new vec4(-1, 0, -2, 0), 0.5, new Pixel(0, 0, 255));
+        
+        Sphere sphere1 = new(new vec4(0, 0, -1, 0), 0.5, new Pixel(1, 1, 1));
+        Sphere sphere2 = new(new vec4(0, -100.5, -1, 0), 100, new Pixel(1, 1, 1));
         shapes.Add(sphere1);
         shapes.Add(sphere2);
-        shapes.Add(sphere3);
+   
+        hitRecord record = new hitRecord();
 
         //Camera Code
         double focalLength = 1.0;
@@ -89,16 +90,17 @@ class Program
             Console.WriteLine($"{i+1} / {height} lines");
             for(int j = 0; j < width; j++) {
                 vec4 pixel_center = vec4.Add3(vec4.Add3(pixel00_loc, vec4.Mul3( pixelDeltaU, (double) j)), vec4.Mul3(pixelDeltaV, (double) i));
-                
                 vec4 ray_direction = vec4.Sub3(pixel_center, cameraCenter);
-                
                 Ray ray = new(cameraCenter, ray_direction);
                 
-                pixelArr[j+(i*width)] = ray_color(ray, shapes);
+                //Reset record
+                record.t = Double.MaxValue;
+
+                pixelArr[j+(i*width)] = ray_color(ray, shapes, record);
             }
         }
 
-        //WriteToFile(height, width, pixelArr);
+        WriteToFile(height, width, pixelArr);
 
         //SDL stuff
         var running = true;
@@ -136,11 +138,20 @@ class Program
         CleanUp(renderer, window);
     }
 
-    static Pixel ray_color(Ray ray, ArrayList shapes) {
+    static Pixel ray_color(Ray ray, ArrayList shapes, hitRecord record) {
+        //If any of the items hit, take info from the rayhit struct and color pixels
+        bool hitMade = false;
         foreach(Shape item in shapes) {
-            if(item.RayHit(ray)) {
-                return item.Color();
-            }
+           if(item.RayHit(ray, 0, Double.MaxValue, record)) {
+                hitMade = true;
+           }
+        }
+
+        if(hitMade) {
+            return new Pixel(
+                (int) (0.5 * (record.normal.e[0] + record.color.r) * 255.999),
+                (int) (0.5 * (record.normal.e[1] + record.color.g) * 255.999),
+                (int) (0.5 * (record.normal.e[2] + record.color.b) * 255.999));
         }
 
         vec4 unit_direction = vec4.Unit3(ray.Direction());
@@ -186,5 +197,4 @@ class Program
         }
 
     }
-
 } 
